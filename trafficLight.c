@@ -4,6 +4,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <limits.h>
 // Make a timed traffic light
 // use enum for light colors
 // use array for time
@@ -43,7 +44,7 @@ int carCount = 0;
 
 int timer[]={2000,1400,1545};
 
-//Function
+//Functions
 int timerFunc();
 void sleepFunc(int x);
 void changeLight();
@@ -56,16 +57,22 @@ void moveCar(Car* car);
 void printGraphStatus(Graph* graph, Car cars[], int carCount);
 void initializeGraph(Graph* graph);
 void printGraph(Graph* graph);
+int minDistance(int dist[],int visited[]);
+void dijkstra(int graph[MAX_NODES][MAX_NODES], int src);
+void addEdge(Graph* graph, int from, int to, int we);
 // Start of main()
 int main()
 {
 srand(time(NULL));  // Seed once at the start
-enqueueMultipleCars(10,10);
+// change this to a RGN eventually
+int numCars = 50;
+enqueueMultipleCars(numCars,10);
 
 timerFunc();
-    Graph trafficGraph;
-    initializeGraph(&trafficGraph);      // Set up node names + connections
-    printGraph(&trafficGraph); 
+    Graph graph;
+    initializeGraph(&graph); 
+    dijkstra(graph.adjacency, 0);     // Set up node names + connections
+    printGraph(&graph); 
     
 }
 // loops through timer array and passes to sleepFunc()
@@ -139,7 +146,7 @@ void enqueueMultipleCars (int numCars, int maxPoint)
 void enqueueCar(int maxpoint )
 {
 Car* newCar = createNewCarRand(maxpoint);
-findPath(&graph, newCar);
+
 
 if (!newCar) return;
 
@@ -192,15 +199,35 @@ void printGraphStatus(Graph* graph, Car cars[], int carCount) {
                graph->nodeNames[cars[i].destination]);
     }
 }
+
+void addEdge(Graph* graph, int from, int to, int weight) {
+    if (from >= 0 && from < MAX_NODES && to >= 0 && to < MAX_NODES && weight > 0) {
+        graph->adjacency[from][to] = weight;
+        graph->adjacency[to][from] = weight;  // If undirected
+    }
+}
+
+
 void initializeGraph(Graph* graph) {
     for (int i = 0; i < MAX_NODES; i++) {
         graph->nodeNames[i] = malloc(20);
         sprintf(graph->nodeNames[i], "Node %d", i);
 
         for (int j = 0; j < MAX_NODES; j++) {
-            graph->adjacency[i][j] = (rand() % 2); // random connection
+            graph->adjacency[i][j] = 0; // random connection
         }
     }
+    addEdge(graph, 0, 9, 5);
+    addEdge(graph, 1, 3, 2);
+    addEdge(graph, 2, 6, 4);
+    addEdge(graph, 3, 7, 3);
+    addEdge(graph, 4, 5, 1);
+    addEdge(graph, 5, 6, 2);
+    addEdge(graph, 6, 7, 2);
+    addEdge(graph, 7, 8, 3);
+    addEdge(graph, 8, 9, 4);
+
+
 }
 void printGraph(Graph* graph) {
     printf("\n📍 Traffic Map (Adjacency Matrix):\n\n");
@@ -221,45 +248,38 @@ void printGraph(Graph* graph) {
         printf(" | %s\n", graph->nodeNames[i]); // Show node name
     }
 }
-void dijkstra(Graph* graph, Car* car)
- {
-int dist[MAX_NODES];
-int prev[MAX_NODES];
-bool visited[MAX_NODES] = false;
-
-for (int i = 0; i<MAX_NODES; i++)
+int minDistance(int dist[],int visited[])
 {
-    dist[i] = INT_MAX;
-    prev[i] = -1;
+    int min = INT_MAX, min_index;
+    for (int i = 0; i < MAX_NODES; i++)
+    {
+        if (!visited[i] && dist[i] <=min)
+        min=dist[i], min_index = i;
+       
+    }
+ return min_index;
+
 
 }
-dist[car -> start] = 0;
+void dijkstra(int graph[MAX_NODES][MAX_NODES], int src) {
+    int dist[MAX_NODES];     // Output array
+    int visited[MAX_NODES];  // Visited set
 
-for (i=0; i < MAX_NODES; i++){
-int minDist = INT_MAX;
-int u = -1;
+    for (int i = 0; i < MAX_NODES; i++)
+        dist[i] = INT_MAX, visited[i] = 0;
 
-       for (int j = 0; j < MAX_NODES; j++) {
-            if (!visited[j] && dist[j] < minDist) {
-                minDist = dist[j];
-                u = j;
-            }
-}
- if (u == -1) break;
-        visited[u] = true;
+    dist[src] = 0;
 
-           for (int v = 0; v < MAX_NODES; v++) {
-            if (graph->adjacency[u][v] && !visited[v] && dist[u] + 1 < dist[v]) {
-                dist[v] = dist[u] + 1;
-                prev[v] = u;
-            }
-        }
-          int tempPath[MAX_NODES];
-    int len = 0;
-    for (int at = car->destination; at != -1; at = prev[at]) {
-        tempPath[len++] = at;
- 
-}
+    for (int count = 0; count < MAX_NODES - 1; count++) {
+        int u = minDistance(dist, visited);
+        visited[u] = 1;
+
+        for (int v = 0; v < MAX_NODES; v++)
+            if (!visited[v] && graph[u][v] &&
+                dist[u] != INT_MAX &&
+                dist[u] + graph[u][v] < dist[v])
+                dist[v] = dist[u] + graph[u][v];
+    }
 }
 // make a graph
 // map cars to graph

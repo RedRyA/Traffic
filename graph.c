@@ -1,100 +1,65 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
 #include <limits.h>
+#include "graph.h"
 
-
-
-#define MAX_NODES 10
-
-
-typedef struct Graph {
-    int adjacency[MAX_NODES][MAX_NODES];
-    char* nodeNames[MAX_NODES];
-
-    }Graph;
-
-void initializeGraph(Graph* graph);
-void printGraph(Graph* graph);
-int minDistance(int dist[],int visited[]);
-void printSolution(int dist[]);
-void dijkstra(int graph[MAX_NODES][MAX_NODES], int src);
-
-//MAIN
-int main() 
-    {
-Graph graph;
-initializeGraph(&graph);
-printGraph(&graph);
- dijkstra(graph.adjacency, 0);
-
-return 0;
+void addEdge(Graph* graph, int from, int to, int weight) {
+    if (from >= 0 && from < MAX_NODES && to >= 0 && to < MAX_NODES && weight > 0) {
+        graph->adjacency[from][to] = weight;
+        graph->adjacency[to][from] = weight;
     }
+}
 
-    void initializeGraph(Graph* graph) {
+void initializeGraph(Graph* graph) {
     for (int i = 0; i < MAX_NODES; i++) {
         graph->nodeNames[i] = malloc(20);
         sprintf(graph->nodeNames[i], "Node %d", i);
-
         for (int j = 0; j < MAX_NODES; j++) {
-            if (i==j){
-
-                graph->adjacency[i][j]= 0;
-            } else {
-
-                     graph->adjacency[i][j] = (rand() % 10); // random connection
-            }
-       
+            graph->adjacency[i][j] = 0;
         }
     }
+    addEdge(graph, 0, 9, 5);
+    addEdge(graph, 1, 3, 2);
+    addEdge(graph, 2, 6, 4);
+    addEdge(graph, 3, 7, 3);
+    addEdge(graph, 4, 5, 1);
+    addEdge(graph, 5, 6, 2);
+    addEdge(graph, 6, 7, 2);
+    addEdge(graph, 7, 8, 3);
+    addEdge(graph, 8, 9, 4);
 }
 
 void printGraph(Graph* graph) {
     printf("\n📍 Traffic Map (Adjacency Matrix):\n\n");
-    
-    // Print column headers
     printf("     ");
     for (int i = 0; i < MAX_NODES; i++) {
         printf("%3d ", i);
     }
     printf("\n");
 
-    // Print rows with connections
     for (int i = 0; i < MAX_NODES; i++) {
         printf("%3d ", i);
         for (int j = 0; j < MAX_NODES; j++) {
             printf(" %2d ", graph->adjacency[i][j]);
         }
-        printf(" | %s\n", graph->nodeNames[i]); // Show node name
+        printf(" | %s\n", graph->nodeNames[i]);
     }
 }
 
-int minDistance(int dist[],int visited[])
-{
-    int min = INT_MAX, min_index;
-    for (int i = 0; i < MAX_NODES; i++)
-    {
-        if (!visited[i] && dist[i] <=min)
-        min=dist[i], min_index = i;
-       
+int minDistance(int dist[], int visited[]) {
+    int min = INT_MAX, min_index = -1;
+    for (int i = 0; i < MAX_NODES; i++) {
+        if (!visited[i] && dist[i] <= min) {
+            min = dist[i];
+            min_index = i;
+        }
     }
- return min_index;
-
-
+    return min_index;
 }
-
-void printSolution(int dist[]) {
-    printf("Vertex \t Distance from Source\n");
-    for (int i = 0; i < MAX_NODES; i++)
-        printf("%d \t\t %d\n", i, dist[i]);
-}
-
 
 void dijkstra(int graph[MAX_NODES][MAX_NODES], int src) {
-    int dist[MAX_NODES];     // Output array
-    int visited[MAX_NODES];  // Visited set
+    int dist[MAX_NODES];
+    int visited[MAX_NODES];
 
     for (int i = 0; i < MAX_NODES; i++)
         dist[i] = INT_MAX, visited[i] = 0;
@@ -105,12 +70,12 @@ void dijkstra(int graph[MAX_NODES][MAX_NODES], int src) {
         int u = minDistance(dist, visited);
         visited[u] = 1;
 
-        for (int v = 0; v < MAX_NODES; v++)
+        for (int v = 0; v < MAX_NODES; v++) {
             if (!visited[v] && graph[u][v] &&
                 dist[u] != INT_MAX &&
-                dist[u] + graph[u][v] < dist[v])
+                dist[u] + graph[u][v] < dist[v]) {
                 dist[v] = dist[u] + graph[u][v];
+            }
+        }
     }
-
-    printSolution(dist);
 }
